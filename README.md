@@ -138,3 +138,7 @@ eval_classification(untrained_model=DecisionTreeClassifier().set_params(**model_
 <!-- ### Shapley Analysis Summary Plot -->
 <!-- ![shap](tests/example_classification/results/shap_summary_plot.png) -->
 ![shap](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/shap_summary_plot.png)
+
+
+## Developer Notes:
+This package is the updated version of `bcutils4r` which supported only binary classification. `bcutils4r` is now defunct.
