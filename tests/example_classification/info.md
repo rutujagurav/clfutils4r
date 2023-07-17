@@ -1,0 +1,1 @@
+These are not real unittests. Just move main.py and pulsar_stars.csv to src/bcutils4r folder to quickly test the util functions.
