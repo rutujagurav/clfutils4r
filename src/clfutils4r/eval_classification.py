@@ -52,11 +52,11 @@ def plot_PR_curve(y_test=None, y_pred=None, RESULTS_DIR='', show=False, save=Fal
     ax1.plot(pct_above_per_thresh, recall_curve, 'r')
     ax2.set_ylabel('recall', color='r')
     plt.title('Precision Recall Curve')
-    
-    if(save):
-        plt.savefig(RESULTS_DIR+'/precision_recall_curve.png', bbox_inches='tight',dpi=dpi)
     if(show):
         plt.show()
+    if(save):
+        plt.savefig(RESULTS_DIR+'/precision_recall_curve.png', bbox_inches='tight',dpi=dpi)
+
     plt.close()
 
 @deprecated
@@ -72,13 +72,14 @@ def plot_ROC_curve(y_test=None, y_pred=None, RESULTS_DIR='', show=False, save=Fa
     plt.ylim([0,1])
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
-    if(save):
-        plt.savefig(RESULTS_DIR+'/roc_curve.png', bbox_inches='tight',dpi=dpi)
     if(show):
         plt.show()
+    if(save):
+        plt.savefig(RESULTS_DIR+'/roc_curve.png', bbox_inches='tight',dpi=dpi)
+
     plt.close()
 
-def plot_confusion_matrix(y_test=None, y_pred=None, RESULTS_DIR='', labels=[], threshold = 0.5, show=False, save=False, dpi=300):
+def plot_confusion_matrix(y_test=None, y_pred=None, labels=[], threshold = 0.5, RESULTS_DIR='', titlestr='', show=False, save=False, dpi=300):
     """
     Returns a matplotlib figure containing the plotted confusion matrix.
     
@@ -133,11 +134,13 @@ def plot_confusion_matrix(y_test=None, y_pred=None, RESULTS_DIR='', labels=[], t
     s.set_ylabel('True Label') #, fontsize=15
     s.set_xlabel('Predicted Label')
     
+    plt.title(titlestr+"Confusion Matrix")
     plt.tight_layout()
-    if save:
-        plt.savefig(RESULTS_DIR+'/confusion_matrix.png', bbox_inches='tight',dpi=dpi)
     if show:
         plt.show()
+    if save:
+        plt.savefig(RESULTS_DIR+'/confusion_matrix.png', bbox_inches='tight',dpi=dpi)
+
     plt.close()
         
 def plot_ks_stat(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -148,14 +151,15 @@ def plot_ks_stat(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=Fal
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title("KS Statistic Plot "+titlestr)
+    plt.title(titlestr+"KS Statistic Plot ")
     plt.grid()
     plt.legend(loc='best')
     plt.tight_layout()
-    if save:
-        plt.savefig(RESULTS_DIR+'/ks_stat.png', bbox_inches='tight',dpi=dpi)
     if show:
         plt.show()
+    if save:
+        plt.savefig(RESULTS_DIR+'/ks_stat.png', bbox_inches='tight',dpi=dpi)
+
     plt.close()
 
 def plot_lift_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -164,14 +168,15 @@ def plot_lift_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title("Lift Curve "+titlestr)
+    plt.title(titlestr+"Lift Curve ")
     # plt.grid()
     plt.legend(loc='best')
     plt.tight_layout()
+    if show:
+        plt.show()
     if save:
         plt.savefig(RESULTS_DIR+'/lift_curve.png', bbox_inches='tight',dpi=dpi)
-    if show:
-        plt.show()    
+    
     plt.close()
 
 def plot_cumul_gain(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -180,14 +185,15 @@ def plot_cumul_gain(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title("Cumulative Gains Curve "+titlestr)
+    plt.title(titlestr+"Cumulative Gains Curve ")
     # plt.grid()
     plt.legend(loc='best')
     plt.tight_layout()
+    if show:
+        plt.show()
     if save:
         plt.savefig(RESULTS_DIR+'/cumul_gain.png', bbox_inches='tight',dpi=dpi)
-    if show:
-        plt.show()    
+    
     plt.close()
 
 def plot_classwise_pr_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -198,13 +204,14 @@ def plot_classwise_pr_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title("Precision-Recall Curve "+titlestr)
+    plt.title(titlestr+"Precision-Recall Curve ")
     plt.grid()
     plt.tight_layout()
+    if show:
+        plt.show()
     if save:
         plt.savefig(RESULTS_DIR+'/classwise_pr_curve.png', bbox_inches='tight',dpi=dpi)
-    if show:
-        plt.show()    
+    
     plt.close()
 
 def plot_classwise_roc_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -215,16 +222,17 @@ def plot_classwise_roc_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR=
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title("ROC Curves "+titlestr)
+    plt.title(titlestr+"ROC Curves ")
     plt.grid()
     plt.tight_layout()
+    if show:
+        plt.show()
     if save:
         plt.savefig(RESULTS_DIR+'/classwise_roc_curve.png', bbox_inches='tight', dpi=dpi)
-    if show:
-        plt.show() 
+ 
     plt.close()
 
-def generate_classification_report(y_test=None, y_pred=None, RESULTS_DIR='', labels=[], show=False, save=False):
+def generate_classification_report(y_test=None, y_pred=None, labels=[], RESULTS_DIR='', show=False, save=False):
     if(len(labels) !=0):
         report = classification_report(y_test, 
                                         y_pred, 
@@ -239,7 +247,7 @@ def generate_classification_report(y_test=None, y_pred=None, RESULTS_DIR='', lab
     if show:
         print(report_df)
 
-def plot_cv_roc_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESULTS_DIR='', title='Cross-Validated ROC Curve', show=False, save=False, dpi=300):
+def plot_cv_roc_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESULTS_DIR='', titlestr='', show=False, save=False, dpi=300):
     """
     Draw a Cross Validated ROC Curve.
     Keyword Args:
@@ -289,17 +297,18 @@ def plot_cv_roc_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RES
     plt.ylim([-0.05, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title(title)
+    plt.title(titlestr+'Cross-Validated ROC Curve')
     plt.legend(bbox_to_anchor=(1, 1))
     # plt.tight_layout()
     plt.grid()
-    if(save):
-        plt.savefig(RESULTS_DIR+'/crossvalidation_roc_curve.png', bbox_inches='tight',dpi=dpi)
     if(show):
         plt.show()
+    if(save):
+        plt.savefig(RESULTS_DIR+'/crossvalidation_roc_curve.png', bbox_inches='tight',dpi=dpi)
+
     plt.close()
 
-def plot_cv_pr_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESULTS_DIR='', title='Cross-Validated PR Curve', show=False, save=False, dpi=300):
+def plot_cv_pr_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESULTS_DIR='', titlestr='', show=False, save=False, dpi=300):
     """
     Draw a Cross Validated PR Curve.
     Keyword Args:
@@ -341,28 +350,29 @@ def plot_cv_pr_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESU
     plt.ylim([-0.05, 1.05])
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.title(title)
+    plt.title(titlestr+'Cross-Validated PR Curve')
     plt.legend(bbox_to_anchor=(1, 1))
     # plt.tight_layout()
     plt.grid()
-    if save:
-        plt.savefig(RESULTS_DIR+'/crossvalidation_pr_curve.png', bbox_inches='tight',dpi=dpi)   
     if show:
         plt.show()
+    if save:
+        plt.savefig(RESULTS_DIR+'/crossvalidation_pr_curve.png', bbox_inches='tight',dpi=dpi)   
     plt.close()
 
-def plot_shap_summary(model=None, nsamples=50, X_train=None, X_test=None, show=False, save=False, RESULTS_DIR=None):
+def plot_shap_summary(model=None, nsamples=50, X_train=None, X_test=None, titlestr='', show=False, save=False, RESULTS_DIR=None):
     print("No. of samples used to build explainer and generate shap values: ", nsamples)
     explainer = shap.KernelExplainer(model.predict, shap.sample(X_train, nsamples))
     shap_values = explainer.shap_values(X=X_test, nsamples=nsamples)
     shap.summary_plot(shap_values=shap_values, features=X_test, show=False)
     # shap.plots.violin(shap_values=shap_values, features=X_test, plot_type="layered_violin", show=False)
-    plt.title('Shapley Analysis')
+    plt.title(titlestr+'Shapley Analysis')
     plt.tight_layout()
-    if save:
-        plt.savefig(RESULTS_DIR+'/shap_summary_plot.png', bbox_inches='tight',dpi=dpi)   
     if show:
         plt.show()
+    if save:
+        plt.savefig(RESULTS_DIR+'/shap_summary_plot.png', bbox_inches='tight',dpi=dpi)   
+
     plt.close()
     
 def eval_classification(untrained_model=None, n_splits=10,
@@ -370,11 +380,18 @@ def eval_classification(untrained_model=None, n_splits=10,
                         make_shap_plot=False, trained_model=None, X_train=None, X_test=None, 
                         y_train=None, y_test=None, y_pred=None, y_pred_proba=None, 
                         class_names=None,
+                        titlestr="",
                         save=False, RESULTS_DIR=None,
                         show=False, dpi=300):
 
-    titlestr = ', '.join(["class {}: {}".format(i, cls_nm) for i, cls_nm in enumerate(class_names)])
-    titlestr = "\n("+titlestr+")"
+    classes_titlestr = ', '.join(["class {}: {}".format(i, cls_nm) for i, cls_nm in enumerate(class_names)])
+    if titlestr != "":
+        titlestr_cls = titlestr+"\n("+classes_titlestr+")\n\n"
+        titlestr_nocls = titlestr+"\n\n"
+    else:
+        titlestr_cls = "("+classes_titlestr+")\n\n"
+        titlestr_nocls = titlestr
+
     if save:
         if RESULTS_DIR is not None:
             if not os.path.exists(RESULTS_DIR):
@@ -396,6 +413,7 @@ def eval_classification(untrained_model=None, n_splits=10,
                                 y_pred=y_pred, 
                                 RESULTS_DIR=RESULTS_DIR, 
                                 labels=class_names,
+                                titlestr=titlestr_nocls,
                                 dpi=dpi,
                                 show=show,  
                                 save=save)
@@ -407,7 +425,7 @@ def eval_classification(untrained_model=None, n_splits=10,
             plot_ks_stat(y_test=y_test,
                             y_pred=y_pred_proba, 
                             RESULTS_DIR=RESULTS_DIR, 
-                            titlestr=titlestr,
+                            titlestr=titlestr_cls,
                             dpi=dpi,
                             show=show, 
                             save=save)
@@ -415,7 +433,7 @@ def eval_classification(untrained_model=None, n_splits=10,
             plot_lift_curve(y_test=y_test,
                                 y_pred=y_pred_proba, 
                                 RESULTS_DIR=RESULTS_DIR, 
-                                titlestr=titlestr,
+                                titlestr=titlestr_cls,
                                 dpi=dpi,
                                 show=show, 
                                 save=save)
@@ -423,7 +441,7 @@ def eval_classification(untrained_model=None, n_splits=10,
             plot_cumul_gain(y_test=y_test,
                                 y_pred=y_pred_proba, 
                                 RESULTS_DIR=RESULTS_DIR, 
-                                titlestr=titlestr,
+                                titlestr=titlestr_cls,
                                 dpi=dpi,
                                 show=show, 
                                 save=save)
@@ -433,7 +451,7 @@ def eval_classification(untrained_model=None, n_splits=10,
         plot_classwise_pr_curve(y_test=y_test,
                                     y_pred=y_pred_proba, 
                                     RESULTS_DIR=RESULTS_DIR, 
-                                    titlestr=titlestr,
+                                    titlestr=titlestr_cls,
                                     dpi=dpi,
                                     show=show, 
                                     save=save)
@@ -441,7 +459,7 @@ def eval_classification(untrained_model=None, n_splits=10,
         plot_classwise_roc_curve(y_test=y_test,
                                     y_pred=y_pred_proba, 
                                     RESULTS_DIR=RESULTS_DIR, 
-                                    titlestr=titlestr,
+                                    titlestr=titlestr_cls,
                                     dpi=dpi,
                                     show=show, 
                                     save=save)
@@ -454,7 +472,7 @@ def eval_classification(untrained_model=None, n_splits=10,
                                 y=pd.Series(y), 
                                 n_splits=n_splits,
                                 RESULTS_DIR=RESULTS_DIR, 
-                                title='Cross Validated ROC Curve', 
+                                titlestr=titlestr_nocls, 
                                 dpi=dpi,
                                 show=show, 
                                 save=save)
@@ -464,7 +482,7 @@ def eval_classification(untrained_model=None, n_splits=10,
                                 y=pd.Series(y), 
                                 n_splits=n_splits,
                                 RESULTS_DIR=RESULTS_DIR, 
-                                title='Cross Validated PR Curve', 
+                                titlestr=titlestr_nocls,
                                 dpi=dpi,
                                 show=show, 
                                 save=save)
@@ -474,7 +492,7 @@ def eval_classification(untrained_model=None, n_splits=10,
     if make_shap_plot:
         if X_train is not None and X_test is not None and trained_model is not None:
             plot_shap_summary(model=trained_model, X_train=X_train, X_test=X_test,
-                                RESULTS_DIR=RESULTS_DIR, show=show, save=save)
+                                titlestr=titlestr_nocls, show=show, RESULTS_DIR=RESULTS_DIR, save=save)
         else:
             print("Hey! You asked me to make a shap plot but did not provide a trained model, X_train and X_test !!!")
             
