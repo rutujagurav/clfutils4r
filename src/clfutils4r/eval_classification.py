@@ -52,11 +52,11 @@ def plot_PR_curve(y_test=None, y_pred=None, RESULTS_DIR='', show=False, save=Fal
     ax1.plot(pct_above_per_thresh, recall_curve, 'r')
     ax2.set_ylabel('recall', color='r')
     plt.title('Precision Recall Curve')
-    if(show):
-        plt.show()
+    
     if(save):
         plt.savefig(RESULTS_DIR+'/precision_recall_curve.png', bbox_inches='tight',dpi=dpi)
-
+    if(show):
+        plt.show()
     plt.close()
 
 @deprecated
@@ -72,11 +72,11 @@ def plot_ROC_curve(y_test=None, y_pred=None, RESULTS_DIR='', show=False, save=Fa
     plt.ylim([0,1])
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
-    if(show):
-        plt.show()
+    
     if(save):
         plt.savefig(RESULTS_DIR+'/roc_curve.png', bbox_inches='tight',dpi=dpi)
-
+    if(show):
+        plt.show()
     plt.close()
 
 def plot_confusion_matrix(y_test=None, y_pred=None, labels=[], threshold = 0.5, RESULTS_DIR='', titlestr='', show=False, save=False, dpi=300):
@@ -136,11 +136,11 @@ def plot_confusion_matrix(y_test=None, y_pred=None, labels=[], threshold = 0.5, 
     
     plt.title(titlestr+"Confusion Matrix")
     plt.tight_layout()
-    if show:
-        plt.show()
+    
     if save:
         plt.savefig(RESULTS_DIR+'/confusion_matrix.png', bbox_inches='tight',dpi=dpi)
-
+    if show:
+        plt.show()
     plt.close()
         
 def plot_ks_stat(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -155,11 +155,11 @@ def plot_ks_stat(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=Fal
     plt.grid()
     plt.legend(loc='best')
     plt.tight_layout()
-    if show:
-        plt.show()
+    
     if save:
         plt.savefig(RESULTS_DIR+'/ks_stat.png', bbox_inches='tight',dpi=dpi)
-
+    if show:
+        plt.show()
     plt.close()
 
 def plot_lift_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -172,11 +172,11 @@ def plot_lift_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=
     # plt.grid()
     plt.legend(loc='best')
     plt.tight_layout()
-    if show:
-        plt.show()
+    
     if save:
         plt.savefig(RESULTS_DIR+'/lift_curve.png', bbox_inches='tight',dpi=dpi)
-    
+    if show:
+        plt.show()
     plt.close()
 
 def plot_cumul_gain(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -189,11 +189,11 @@ def plot_cumul_gain(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=
     # plt.grid()
     plt.legend(loc='best')
     plt.tight_layout()
-    if show:
-        plt.show()
+    
     if save:
         plt.savefig(RESULTS_DIR+'/cumul_gain.png', bbox_inches='tight',dpi=dpi)
-    
+    if show:
+        plt.show()
     plt.close()
 
 def plot_classwise_pr_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -207,11 +207,11 @@ def plot_classwise_pr_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='
     plt.title(titlestr+"Precision-Recall Curve ")
     plt.grid()
     plt.tight_layout()
-    if show:
-        plt.show()
+    
     if save:
         plt.savefig(RESULTS_DIR+'/classwise_pr_curve.png', bbox_inches='tight',dpi=dpi)
-    
+    if show:
+        plt.show()
     plt.close()
 
 def plot_classwise_roc_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
@@ -225,11 +225,11 @@ def plot_classwise_roc_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR=
     plt.title(titlestr+"ROC Curves ")
     plt.grid()
     plt.tight_layout()
-    if show:
-        plt.show()
+    
     if save:
         plt.savefig(RESULTS_DIR+'/classwise_roc_curve.png', bbox_inches='tight', dpi=dpi)
- 
+    if show:
+        plt.show()
     plt.close()
 
 def generate_classification_report(y_test=None, y_pred=None, labels=[], RESULTS_DIR='', show=False, save=False):
@@ -301,11 +301,11 @@ def plot_cv_roc_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RES
     plt.legend(bbox_to_anchor=(1, 1))
     # plt.tight_layout()
     plt.grid()
-    if(show):
-        plt.show()
+    
     if(save):
         plt.savefig(RESULTS_DIR+'/crossvalidation_roc_curve.png', bbox_inches='tight',dpi=dpi)
-
+    if(show):
+        plt.show()
     plt.close()
 
 def plot_cv_pr_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESULTS_DIR='', titlestr='', show=False, save=False, dpi=300):
@@ -354,10 +354,11 @@ def plot_cv_pr_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESU
     plt.legend(bbox_to_anchor=(1, 1))
     # plt.tight_layout()
     plt.grid()
-    if show:
-        plt.show()
+    
     if save:
         plt.savefig(RESULTS_DIR+'/crossvalidation_pr_curve.png', bbox_inches='tight',dpi=dpi)   
+    if show:
+        plt.show()
     plt.close()
 
 def plot_shap_summary(model=None, nsamples=50, X_train=None, X_test=None, titlestr='', show=False, save=False, RESULTS_DIR=None):
@@ -368,10 +369,11 @@ def plot_shap_summary(model=None, nsamples=50, X_train=None, X_test=None, titles
     # shap.plots.violin(shap_values=shap_values, features=X_test, plot_type="layered_violin", show=False)
     plt.title(titlestr+'Shapley Analysis')
     plt.tight_layout()
-    if show:
-        plt.show()
+    
     if save:
         plt.savefig(RESULTS_DIR+'/shap_summary_plot.png', bbox_inches='tight',dpi=dpi)   
+    if show:
+        plt.show()
 
     plt.close()
     
