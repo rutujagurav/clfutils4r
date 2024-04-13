@@ -164,3 +164,8 @@ eval_classification(make_metrics_plots=True, y_test=y_test, y_pred=y_pred, y_pre
 
 ## Developer Notes:
 This package is the updated version of `bcutils4r` which supported only binary classification. `bcutils4r` is now defunct.
+
+## Credits:
+1. For pretty confusion matrix - https://github.com/phongsathorn1/pretty-confusion-matrix
+2. Scikit Plot package  - https://scikit-plot.readthedocs.io/en/stable
+3. Shapley Analysis - https://shap-lrjball.readthedocs.io/en/latest/
