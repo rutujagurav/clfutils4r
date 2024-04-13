@@ -125,7 +125,7 @@ from eval_classification import eval_classification
 ## Make metrics plots
 eval_classification(make_metrics_plots=True, y_test=y_test, y_pred=y_pred, y_pred_proba=y_pred_proba,  
                     class_names=class_names, feature_names=feature_names,
-                    titlestr="Breast Cancer Detection",
+                    titlestr="Breast Cancer Classification",
                     show=True, save=True, 
                     RESULTS_DIR=os.getcwd()+'/test_results')
 
