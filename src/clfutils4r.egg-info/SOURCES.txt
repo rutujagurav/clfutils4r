@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+src/clfutils4r/__init__.py
+src/clfutils4r/eval_classification.py
+src/clfutils4r/gridsearch_classification.py
+src/clfutils4r/pretty_cm.py
+src/clfutils4r.egg-info/PKG-INFO
+src/clfutils4r.egg-info/SOURCES.txt
+src/clfutils4r.egg-info/dependency_links.txt
+src/clfutils4r.egg-info/top_level.txt

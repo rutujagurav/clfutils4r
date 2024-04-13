@@ -1,0 +1,25 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clfutils4r"
+version = "1.0.0"
+authors = [
+  { name="Rutuja Gurav", email="rutujagurav100@gmail.com" },
+]
+description = "Wrapper around some basic sklearn and scikit-plot utilities for classification."
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ]
+
+[project.urls]
+"Homepage" = "https://github.com/rutujagurav/clfutils4r"
+"Bug Tracker" = "https://github.com/rutujagurav/clfutils4r/issues"

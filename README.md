@@ -1,6 +1,34 @@
 # Classification Utilities
 
-This packages provides a simple convenience wrapper around some basic sklearn and scikit-plot utilities for classification. The only function available is `eval_classification()`. 
+This packages provides a simple convenience wrapper around some basic sklearn and scikit-plot utilities for classification. 
+There are two modules available - `gridsearch_classification` and `eval_classification`.
+
+## Installation
+
+`pip install clfutils4r`
+
+## Module `gridsearch_classification`:
+Only function available is `gridsearch_classification()`
+
+### Available Parameters
+
+`X`: dataset.
+
+`gt_labels`: ground truth labels.
+
+`best_model_metric`: metric to use to choose the best model.
+
+**For plotting**
+
+`show`: whether to display the plots; this is used in a notebook.
+
+`save`: whether to save the plots.
+
+`save_dir`: if `save=True`, directory to save results in.
+                                                        
+
+## Module `eval_classification`: 
+Only function available is `eval_classification()`
 
 Metrics plotted - 
 1. Confusion Matrix
@@ -14,13 +42,7 @@ Additional metrics plotted if binary classification -
 4. Cross-validated PR curve
 5. Cross-validated ROC curve
 
-
-## Installation
-
-`pip install clfutils4r`
-
-## Available Parameters
-
+### Available Parameters
 **For cross-validation on full dataset**
 
 `untrained_model`: classifier object (untrained); this is used for cross-validation
@@ -59,7 +81,10 @@ Additional metrics plotted if binary classification -
 
 ## Example Usage
 ```python
+
+import collections
 import matplotlib.pyplot as plt
+%matplotlib inline
 import numpy as np
 import pandas as pd
 import os
@@ -70,74 +95,71 @@ scaler = StandardScaler()
 
 ## Load dataset: Example - breast cancer prediction
 data = datasets.load_breast_cancer()
-class_names = data.target_names
-feature_names = data.feature_names
-X = pd.DataFrame(data.data, columns=feature_names)
-y = pd.Series(data.target)
-for feat_name in feature_names:
-    X[feat_name] = scaler.fit_transform(X[[feat_name]]) 
+class_names = [str(x) for x in data.target_names]
+feature_names = [str(x) for x in data.feature_names]
+
+X, y = data.data, data.target
+X = scaler.fit_transform(X)
 
 ## Split into train and test sets
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42)
 
-## Setup model
-from sklearn.tree import DecisionTreeClassifier
-model = DecisionTreeClassifier()
-model_params = {'criterion': 'gini', 'max_depth': 3, 'min_samples_leaf': 5}
-model.set_params(**model_params)
+## Grid search for best model
+from gridsearch_classification import gridsearch_classification
+save_dir = "gridsearch_results"
+os.makedirs(save_dir, exist_ok=True)
+best_model, grid_search_results = gridsearch_classification(X=X_train,                    # dataset
+                                                            gt_labels=y_train,            # ground truth labels
+                                                            best_model_metric="F1",       # metric to use to choose the best model
+                                                            show=True,                    # whether to display the plots; this is used in a notebook
+                                                            save=True, save_dir=save_dir  # whether to save the plots
+                                                        )
 
-## Train model
-model.fit(X_train, y_train)
+## Predict on test set
+y_pred = best_model.predict(X_test)
+y_pred_proba = best_model.predict_proba(X_test)
 
-## Evaluate model
-from clfutils4r.eval_classification import eval_classification
-y_pred = model.predict(X_test)
-y_pred_proba = model.predict_proba(X_test)
-
-eval_classification(untrained_model=DecisionTreeClassifier().set_params(**model_params), 
-                    n_splits=5, class_names=class_names, 
-                    X=X, y=y, 
-                    make_shap_plot=True, trained_model=model, X_train=X_train, X_test=X_test,
-                    y_test=y_test, y_pred=y_pred, y_pred_proba=y_pred_proba, 
-                    show=True, save=True, RESULTS_DIR=os.getcwd()+'/results')
+## Evaluate best model on test set
+from eval_classification import eval_classification
+## Make metrics plots
+eval_classification(make_metrics_plots=True, y_test=y_test, y_pred=y_pred, y_pred_proba=y_pred_proba,  
+                    class_names=class_names, feature_names=feature_names,
+                    titlestr="Breast Cancer Detection",
+                    show=True, save=True, 
+                    RESULTS_DIR=os.getcwd()+'/test_results')
 
 ```
+<!-- ### Grid Search -->
+![grid_search](tests/example_classification/gridsearch_results/models/RandomForestClassifier/parcoord_plot.png)
+
 <!-- ### Confusion Matrix -->
-<!-- ![cm](tests/example_classification/results/confusion_matrix.png) -->
-![cm](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/confusion_matrix.png)
+![cm](tests/example_classification/test_results/confusion_matrix.png)
+<!-- ![cm](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/confusion_matrix.png) -->
 
 <!-- ### Class-wise ROC curve -->
-<!-- ![roc](tests/example_classification/results/classwise_roc_curve.png) -->
-![roc](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/classwise_roc_curve.png)
+![roc](tests/example_classification/test_results/classwise_roc_curve.png)
+<!-- ![roc](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/classwise_roc_curve.png) -->
 
 <!-- ### Class-wise PR curve -->
-<!-- ![pr](tests/example_classification/results/classwise_pr_curve.png) -->
-![pr](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/classwise_pr_curve.png)
+![pr](tests/example_classification/test_results/classwise_pr_curve.png)
+<!-- ![pr](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/classwise_pr_curve.png) -->
 
 <!-- ### KS statistic  -->
-<!-- ![ks_stat](tests/example_classification/results/ks_stat.png) -->
-![ks_stat](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/ks_stat.png)
+![ks_stat](tests/example_classification/test_results/ks_stat.png)
+<!-- ![ks_stat](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/ks_stat.png) -->
 
 <!-- ### Lift Curve  -->
-<!-- ![lift](tests/example_classification/results/lift_curve.png) -->
-![lift](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/lift_curve.png)
+![lift](tests/example_classification/test_results/lift_curve.png)
+<!-- ![lift](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/lift_curve.png) -->
 
 <!-- ### Cumulative Gain Curve  -->
-<!-- ![lift](tests/example_classification/results/cumul_gain.png) -->
-![lift](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/cumul_gain.png)
-
-<!-- ### Cross-validated ROC curves -->
-<!-- ![cv_roc](tests/example_classification/results/crossvalidation_roc_curve.png) -->
-![cv_roc](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/crossvalidation_roc_curve.png)
-
-<!-- ### Cross-validated PR curves -->
-<!-- ![cv_pr](tests/example_classification/results/crossvalidation_pr_curve.png) -->
-![cv_pr](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/crossvalidation_pr_curve.png)
+![lift](tests/example_classification/test_results/cumul_gain.png)
+<!-- ![lift](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/cumul_gain.png) -->
 
 <!-- ### Shapley Analysis Summary Plot -->
-<!-- ![shap](tests/example_classification/results/shap_summary_plot.png) -->
-![shap](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/shap_summary_plot.png)
+![shap](tests/example_classification/test_results/shap_summary_plot.png)
+<!-- ![shap](https://github.com/rutujagurav/clfutils4r/blob/main/tests/example_classification/results/shap_summary_plot.png) -->
 
 
 ## Developer Notes:

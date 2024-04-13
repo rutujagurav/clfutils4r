@@ -1,0 +1,1 @@
+{"model_name": "KNeighborsClassifier", "model_params": {"algorithm": "auto", "leaf_size": 30, "metric": "minkowski", "metric_params": null, "n_jobs": null, "n_neighbors": 1, "p": 1, "weights": "uniform"}}

@@ -2,20 +2,31 @@ import matplotlib.pyplot as plt
 plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = ['Times New Roman'] + plt.rcParams['font.serif']
 plt.rcParams['axes.facecolor'] = plt.rcParams['savefig.facecolor'] = 'white'
+plt.rcParams['axes.labelsize'] = \
+    plt.rcParams['axes.titlesize'] = \
+    plt.rcParams['xtick.labelsize'] = \
+    plt.rcParams['ytick.labelsize'] = \
+    'xx-large'
+
 # from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
 # sns.set()
 import pandas as pd
 import numpy as np
-import os
-
+import os, textwrap
 from deprecation import deprecated
 
-import scikitplot
+import sklearn
+print(f"sklearn version: {sklearn.__version__}")
 from sklearn.inspection import permutation_importance
-from sklearn.model_selection import KFold, train_test_split, RandomizedSearchCV, StratifiedKFold, cross_val_score
-from sklearn.metrics import confusion_matrix, accuracy_score, auc, average_precision_score, precision_score, recall_score, confusion_matrix, classification_report, roc_curve, precision_recall_curve, f1_score, roc_auc_score
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score, average_precision_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.metrics import confusion_matrix, auc, classification_report, roc_curve, precision_recall_curve
 from sklearn.manifold import TSNE
+
+import scikitplot
+print(f"scikitplot version: {scikitplot.__version__}")
+import pretty_cm # type: ignore
 
 import shap
 
@@ -79,7 +90,7 @@ def plot_ROC_curve(y_test=None, y_pred=None, RESULTS_DIR='', show=False, save=Fa
         plt.show()
     plt.close()
 
-def plot_confusion_matrix(y_test=None, y_pred=None, labels=[], threshold = 0.5, RESULTS_DIR='', titlestr='', show=False, save=False, dpi=300):
+def plot_confusion_matrix(y_test=None, y_pred=None, labels=[], threshold = 0.5, RESULTS_DIR='', titlestr='', pretty=True, show=False, save=False, dpi=300):
     """
     Returns a matplotlib figure containing the plotted confusion matrix.
     
@@ -88,33 +99,48 @@ def plot_confusion_matrix(y_test=None, y_pred=None, labels=[], threshold = 0.5, 
        y_pred: predicted labels
        labels: class_names since y_test, y_pred are encoded.
     """
-    ## Create confusion matrix using scikit-plot
-    # fig, ax = plt.subplots()
-    # ax = scikitplot.metrics.plot_confusion_matrix(y_test,y_pred, ax=ax)
-    # if(len(labels) != 0):
-    #     ax.set_xticklabels(labels)
-    #     ax.set_yticklabels(labels)
-    #     # Rotate the tick labels and set their alignment.
-    #     plt.setp(ax.get_xticklabels(), rotation=0, ha="right", rotation_mode="anchor")
-    #     plt.setp(ax.get_yticklabels(), rotation=90, ha="right", rotation_mode="anchor")
-    
-    ## Create confusion matrix using sklearn
-    cm = confusion_matrix(y_test, y_pred)
-    # Normalize the confusion matrix.
-    cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=2)
-    # print(cm.shape)
+    num_classes = len(set(y_test))
+    if num_classes <= 3: figsize=(5,5)
+    else: figsize=(num_classes, num_classes)
+
+    if not pretty:
+        ## Create confusion matrix using scikit-plot
+        fig, ax = plt.subplots()
+        ax = scikitplot.metrics.plot_confusion_matrix(y_test, y_pred, 
+                                                    normalize=True, 
+                                                    text_fontsize='x-large', 
+                                                    title_fontsize='xx-large',
+                                                    ax=ax)
+        if(len(labels) != 0):
+            ax.set_xticks(ax.get_xticks())
+            ax.set_xticklabels(labels, rotation=0, ha="center", rotation_mode="anchor")
+            ax.set_yticks(ax.get_yticks())
+            ax.set_yticklabels(labels, rotation=90, ha="center", rotation_mode="anchor")
+    else:
+        cm = confusion_matrix(y_test, y_pred)
+        pretty_cm.plot_from_confusion_matrix(cm, columns=labels, 
+                                                fz='x-large', 
+                                                figsize=figsize
+                                            )
+    # ## Create confusion matrix using sklearn
+    # cm = confusion_matrix(y_test, y_pred)
+    # # Normalize the confusion matrix.
+    # cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=2)
+    # # print(cm.shape)
 
     # vals = [["{}\n(True Positives)".format(str(cm[0,0])), "{}\n(False Positives)".format(str(cm[0,1]))],
     #         ["{}\n(False Negatives)".format(str(cm[1,0])), "{}\n(True Negatives)".format(str(cm[0,1]))]
     #     ]
     # print(vals)
     
-    fig, ax = plt.subplots()
-    s = sns.heatmap(cm, vmin=0, vmax=1, center=0.5, 
-                    xticklabels = labels, yticklabels = labels,
-                    cmap=plt.cm.Blues, cbar=False, 
-                    ax=ax, square=True, 
-                    annot=True) # , annot_kws={"fontsize":10}
+    # fig, ax = plt.subplots()
+    # s = sns.heatmap(cm, vmin=0, vmax=1, center=0.5, 
+    #                 xticklabels = labels, yticklabels = labels,
+    #                 cmap=plt.cm.Blues, cbar=False, 
+    #                 ax=ax, square=True, 
+    #                 annot=True) # , annot_kws={"fontsize":10}
+    # s.set_ylabel('True Label')
+    # s.set_xlabel('Predicted Label')
 
     # plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     # plt.title("Confusion matrix")
@@ -122,7 +148,6 @@ def plot_confusion_matrix(y_test=None, y_pred=None, labels=[], threshold = 0.5, 
     # tick_marks = np.arange(len(class_names))+0.5
     # ax.set_xticks(tick_marks, class_names, rotation=90)
     # ax.set_yticks(tick_marks, class_names)
-    
     ### Use white text if squares are dark; otherwise black.
     # threshold = cm.max() / 2.0
     # for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
@@ -130,30 +155,34 @@ def plot_confusion_matrix(y_test=None, y_pred=None, labels=[], threshold = 0.5, 
     #     ax.set_text(j, i, cm[i, j], horizontalalignment="center", color=color)
     # ax.set_ylabel('True Label', fontsize=15)
     # ax.set_xlabel('Predicted Label', fontsize=15)
+        
+    # plt.title(titlestr+"Confusion Matrix")
 
-    s.set_ylabel('True Label') #, fontsize=15
-    s.set_xlabel('Predicted Label')
-    
-    plt.title(titlestr+"Confusion Matrix")
+
     plt.tight_layout()
-    
     if save:
         plt.savefig(RESULTS_DIR+'/confusion_matrix.png', bbox_inches='tight',dpi=dpi)
     if show:
         plt.show()
     plt.close()
         
-def plot_ks_stat(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
-    fig, ax = plt.subplots()
-    ax = scikitplot.metrics.plot_ks_statistic(y_test, y_pred, ax=ax)
+def plot_ks_stat(y_test=None, y_pred=None, titlestr='', classes_titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
+    if len(classes_titlestr) > 50: classes_titlestr = '\n'.join(textwrap.wrap(classes_titlestr, 50))
+
+    fig, ax = plt.subplots(figsize=(10,5))
+    ax = scikitplot.metrics.plot_ks_statistic(y_test, y_pred, 
+                                            text_fontsize='xx-large', 
+                                            title_fontsize='xx-large',
+                                            ax=ax)
     ax.set_xlim([-0.05, 1.05])
     ax.set_ylim([-0.05, 1.05])
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title(titlestr+"KS Statistic Plot ")
+    plt.title(titlestr+"KS Statistic Plot")
     plt.grid()
-    plt.legend(loc='best')
+    legend = plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', title=classes_titlestr, fontsize='large')
+    legend.get_title().set_fontsize('large')
     plt.tight_layout()
     
     if save:
@@ -162,15 +191,23 @@ def plot_ks_stat(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=Fal
         plt.show()
     plt.close()
 
-def plot_lift_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
-    fig, ax = plt.subplots()
-    ax = scikitplot.metrics.plot_lift_curve(y_test, y_pred, ax=ax)
+def plot_lift_curve(y_test=None, y_pred=None, titlestr='', classes_titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
+    if len(classes_titlestr) > 50: classes_titlestr = '\n'.join(textwrap.wrap(classes_titlestr, 50))
+
+    fig, ax = plt.subplots(figsize=(10,5))
+    ax = scikitplot.metrics.plot_lift_curve(y_test, y_pred, 
+                                            text_fontsize='xx-large', 
+                                            title_fontsize='xx-large',
+                                            ax=ax)
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title(titlestr+"Lift Curve ")
+    plt.title(titlestr+"Lift Curve", 
+            #   fontsize=axes_label_fontsize
+            )
     # plt.grid()
-    plt.legend(loc='best')
+    legend = plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', title=classes_titlestr, fontsize='large')
+    legend.get_title().set_fontsize('large')
     plt.tight_layout()
     
     if save:
@@ -179,15 +216,23 @@ def plot_lift_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=
         plt.show()
     plt.close()
 
-def plot_cumul_gain(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
-    fig, ax = plt.subplots()
-    ax = scikitplot.metrics.plot_cumulative_gain(y_test, y_pred, ax=ax)
+def plot_cumul_gain(y_test=None, y_pred=None, titlestr='', classes_titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
+    if len(classes_titlestr) > 50: classes_titlestr = '\n'.join(textwrap.wrap(classes_titlestr, 50))
+
+    fig, ax = plt.subplots(figsize=(10,5))
+    ax = scikitplot.metrics.plot_cumulative_gain(y_test, y_pred, 
+                                                text_fontsize='xx-large', 
+                                                title_fontsize='xx-large',
+                                                ax=ax)
+    ax.set_xlim([-0.05, 1.05])
+    ax.set_ylim([-0.05, 1.05])
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title(titlestr+"Cumulative Gains Curve ")
+    plt.title(titlestr+"Cumulative Gains Curve")
     # plt.grid()
-    plt.legend(loc='best')
+    legend = plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', title=classes_titlestr, fontsize='large')
+    legend.get_title().set_fontsize('large')
     plt.tight_layout()
     
     if save:
@@ -196,16 +241,27 @@ def plot_cumul_gain(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=
         plt.show()
     plt.close()
 
-def plot_classwise_pr_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
-    fig, ax = plt.subplots()
-    ax = scikitplot.metrics.plot_precision_recall(y_test, y_pred, ax=ax)
+def plot_classwise_pr_curve(y_test=None, y_pred=None, titlestr='', classes_titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
+    if len(classes_titlestr) > 50: classes_titlestr = '\n'.join(textwrap.wrap(classes_titlestr, 50))
+    
+    fig, ax = plt.subplots(figsize=(10,5))
+    ax = scikitplot.metrics.plot_precision_recall(y_test, y_pred, 
+                                                # text_fontsize='xx-large', 
+                                                title_fontsize='xx-large',
+                                                ax=ax)
     ax.set_xlim([-0.05, 1.05])
     ax.set_ylim([-0.05, 1.05])
     ax.set_facecolor('white')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title(titlestr+"Precision-Recall Curve ")
+    ax.set_xticklabels(ax.get_xticks().round(1), fontsize='x-large')
+    ax.set_yticklabels(ax.get_yticks().round(1), fontsize='x-large')
+    ax.set_xlabel(ax.get_xlabel(), fontsize='xx-large')
+    ax.set_ylabel(ax.get_ylabel(), fontsize='xx-large')
+    plt.title(titlestr+"Precision-Recall Curve")
     plt.grid()
+    legend = plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', title=classes_titlestr, fontsize='large')
+    legend.get_title().set_fontsize('large')
     plt.tight_layout()
     
     if save:
@@ -214,16 +270,27 @@ def plot_classwise_pr_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='
         plt.show()
     plt.close()
 
-def plot_classwise_roc_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
-    fig, ax = plt.subplots()
-    ax = scikitplot.metrics.plot_roc(y_test, y_pred, ax=ax)
+def plot_classwise_roc_curve(y_test=None, y_pred=None, titlestr='', classes_titlestr='', RESULTS_DIR='', show=False, save=False, dpi=300):
+    if len(classes_titlestr) > 50: classes_titlestr = '\n'.join(textwrap.wrap(classes_titlestr, 50))
+
+    fig, ax = plt.subplots(figsize=(10,5))
+    ax = scikitplot.metrics.plot_roc(y_test, y_pred, 
+                                    # text_fontsize='xx-large', 
+                                    title_fontsize='xx-large',
+                                    ax=ax)
     ax.set_xlim([-0.05, 1.05])
     ax.set_ylim([-0.05, 1.05])
     ax.set_facecolor('white')
+    ax.set_xticklabels(ax.get_xticks().round(1), fontsize='x-large')
+    ax.set_yticklabels(ax.get_yticks().round(1), fontsize='x-large')
+    ax.set_xlabel(ax.get_xlabel(), fontsize='xx-large')
+    ax.set_ylabel(ax.get_ylabel(), fontsize='xx-large')
     for l in ax.lines:
         l.set_lw(2)
-    plt.title(titlestr+"ROC Curves ")
+    plt.title(titlestr+"ROC Curves")
     plt.grid()
+    legend = plt.legend(bbox_to_anchor=(1, 0.5), loc='center left', title=classes_titlestr, fontsize='large')
+    legend.get_title().set_fontsize('large')
     plt.tight_layout()
     
     if save:
@@ -231,6 +298,7 @@ def plot_classwise_roc_curve(y_test=None, y_pred=None, titlestr='', RESULTS_DIR=
     if show:
         plt.show()
     plt.close()
+
 
 def generate_classification_report(y_test=None, y_pred=None, labels=[], RESULTS_DIR='', show=False, save=False):
     if(len(labels) !=0):
@@ -253,8 +321,8 @@ def plot_cv_roc_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RES
     Keyword Args:
         classifier: Classifier Object
         cv: StratifiedKFold Object: (https://stats.stackexchange.com/questions/49540/understanding-stratified-cross-validation)
-        X: Feature Pandas DataFrame
-        y: Response Pandas Series
+        X: Features Pandas DataFrame
+        y: Target Pandas Series
     Example largely taken from http://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html#sphx-glr-auto-examples-model-selection-plot-roc-crossval-py
     """
     # Creating ROC Curve with Cross Validation
@@ -361,11 +429,11 @@ def plot_cv_pr_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESU
         plt.show()
     plt.close()
 
-def plot_shap_summary(model=None, nsamples=50, X_train=None, X_test=None, titlestr='', show=False, save=False, RESULTS_DIR=None):
+def plot_shap_summary(model=None, nsamples=50, X_train=None, X_test=None, feature_names=None, titlestr='', show=False, save=False, RESULTS_DIR=None, dpi=300):
     print("No. of samples used to build explainer and generate shap values: ", nsamples)
     explainer = shap.KernelExplainer(model.predict, shap.sample(X_train, nsamples))
     shap_values = explainer.shap_values(X=X_test, nsamples=nsamples)
-    shap.summary_plot(shap_values=shap_values, features=X_test, show=False)
+    shap.summary_plot(shap_values=shap_values, features=X_test, feature_names=feature_names, show=False)
     # shap.plots.violin(shap_values=shap_values, features=X_test, plot_type="layered_violin", show=False)
     plt.title(titlestr+'Shapley Analysis')
     plt.tight_layout()
@@ -376,23 +444,58 @@ def plot_shap_summary(model=None, nsamples=50, X_train=None, X_test=None, titles
         plt.show()
 
     plt.close()
+
+def plot_calibration_curve(classifiers_list=[], 
+                           classifiers_names=[],
+                           X_train=None, X_test=None, y_train=None, y_test=None,
+                           titlestr='', RESULTS_DIR='', show=False, save=False, 
+                           dpi=300):
+    print("Generating Calibration Curves...")
+    probas_list = []
+    for classifier, name in zip(classifiers_list, classifiers_names):
+        print("\tTraining classifier: ", name)
+        probas_list.append(classifier.fit(X_train, y_train).predict_proba(X_test))
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+    ax = scikitplot.metrics.plot_calibration_curve(y_test, probas_list, 
+                                                    classifiers_names, 
+                                                    text_fontsize='xx-large', 
+                                                    ax=ax)
+    ax.set_xlim([-0.05, 1.05])
+    ax.set_ylim([-0.05, 1.05])
+    ax.set_facecolor('white')
+    for l in ax.lines:
+        l.set_lw(2)
+    plt.title(titlestr+"Calibration Curve")
+    plt.grid()
+    plt.legend(bbox_to_anchor=(1, 1))
+    plt.tight_layout()
     
-def eval_classification(untrained_model=None, n_splits=10,
-                        X=None, y=None, 
-                        make_shap_plot=False, trained_model=None, X_train=None, X_test=None, 
-                        y_train=None, y_test=None, y_pred=None, y_pred_proba=None, 
-                        class_names=None,
+    if save:
+        plt.savefig(RESULTS_DIR+'/calibration_curve.png', bbox_inches='tight',dpi=dpi)
+    if show:
+        plt.show()
+    plt.close()
+
+def eval_classification(make_metrics_plots=True, y_pred=None, y_pred_proba=None, 
+                        untrained_model=None, n_splits=10, X=None, y=None, 
+                        make_calibration_curves=False, untrained_models_list=[], untrained_models_names=[],
+                        make_shap_plot=False, trained_model=None, shap_nsamples=50,
+                        X_train=None, X_test=None, y_train=None, y_test=None,
+                        class_names=None, feature_names=None,
                         titlestr="",
                         save=False, RESULTS_DIR=None,
                         show=False, dpi=300):
 
     classes_titlestr = ', '.join(["class {}: {}".format(i, cls_nm) for i, cls_nm in enumerate(class_names)])
     if titlestr != "":
-        titlestr_cls = titlestr+"\n("+classes_titlestr+")\n\n"
-        titlestr_nocls = titlestr+"\n\n"
+        # titlestr_cls = titlestr+"\n("+classes_titlestr+")\n\n"
+        # titlestr_nocls = titlestr+"\n\n"
+        titlestr_cls = titlestr_nocls = titlestr+"\n"
     else:
-        titlestr_cls = "("+classes_titlestr+")\n\n"
-        titlestr_nocls = titlestr
+        # titlestr_cls = "("+classes_titlestr+")\n\n"
+        # titlestr_nocls = titlestr
+        titlestr_cls = titlestr_nocls = ""
 
     if save:
         if RESULTS_DIR is not None:
@@ -402,16 +505,17 @@ def eval_classification(untrained_model=None, n_splits=10,
         else:
             print("Hey! You asked me to save results but did not provide a RESULTS_DIR !!!")
 
-    if y_test is not None and y_pred is not None:
-        assert len(y_test) == len(y_pred), "[Length Mismatch]: Number of test samples not equal to number of predictions"
-        generate_classification_report(y_test=y_test, 
-                                        y_pred=y_pred, 
-                                        RESULTS_DIR=RESULTS_DIR, 
-                                        labels=class_names,
-                                        show=show, 
-                                        save=save)
+    if make_metrics_plots:
+        if y_test is not None and y_pred is not None:
+            assert len(y_test) == len(y_pred), "[Length Mismatch]: Number of test samples not equal to number of predictions"
+            generate_classification_report(y_test=y_test, 
+                                            y_pred=y_pred, 
+                                            RESULTS_DIR=RESULTS_DIR, 
+                                            labels=class_names,
+                                            show=show, 
+                                            save=save)
 
-        plot_confusion_matrix(y_test=y_test, 
+            plot_confusion_matrix(y_test=y_test, 
                                 y_pred=y_pred, 
                                 RESULTS_DIR=RESULTS_DIR, 
                                 labels=class_names,
@@ -420,81 +524,106 @@ def eval_classification(untrained_model=None, n_splits=10,
                                 show=show,  
                                 save=save)
 
-    if y_test is not None and y_pred_proba is not None:
-        assert len(y_test) == len(y_pred_proba), "[Length Mismatch]: Number of test samples not equal to number of predictions"
-        
-        if len(list(set(y_test))) == 2:
-            plot_ks_stat(y_test=y_test,
-                            y_pred=y_pred_proba, 
-                            RESULTS_DIR=RESULTS_DIR, 
-                            titlestr=titlestr_cls,
-                            dpi=dpi,
-                            show=show, 
-                            save=save)
+        if y_test is not None and y_pred_proba is not None:
+            assert len(y_test) == len(y_pred_proba), "[Length Mismatch]: Number of test samples not equal to number of predictions"
             
-            plot_lift_curve(y_test=y_test,
+            if len(list(set(y_test))) == 2:
+                plot_ks_stat(y_test=y_test,
                                 y_pred=y_pred_proba, 
                                 RESULTS_DIR=RESULTS_DIR, 
                                 titlestr=titlestr_cls,
+                                classes_titlestr = classes_titlestr,
                                 dpi=dpi,
                                 show=show, 
                                 save=save)
-
-            plot_cumul_gain(y_test=y_test,
-                                y_pred=y_pred_proba, 
-                                RESULTS_DIR=RESULTS_DIR, 
-                                titlestr=titlestr_cls,
-                                dpi=dpi,
-                                show=show, 
-                                save=save)
-        else:
-            print("Skipping KS, Lift and Cumulative Gain plots as number of classes is not 2")
-        
-        plot_classwise_pr_curve(y_test=y_test,
+                
+                plot_lift_curve(y_test=y_test,
                                     y_pred=y_pred_proba, 
                                     RESULTS_DIR=RESULTS_DIR, 
                                     titlestr=titlestr_cls,
-                                    dpi=dpi,
-                                    show=show, 
-                                    save=save)
-        
-        plot_classwise_roc_curve(y_test=y_test,
-                                    y_pred=y_pred_proba, 
-                                    RESULTS_DIR=RESULTS_DIR, 
-                                    titlestr=titlestr_cls,
+                                    classes_titlestr = classes_titlestr,
                                     dpi=dpi,
                                     show=show, 
                                     save=save)
 
-    if untrained_model is not None and X is not None and y is not None:
-        assert len(X) == len(y), "[Length Mismatch]: Number of samples not equal to number of class labels"    
-        if len(list(set(y_test))) == 2:
-            plot_cv_roc_curve(classifier=untrained_model, 
-                                X=X, 
-                                y=pd.Series(y), 
-                                n_splits=n_splits,
-                                RESULTS_DIR=RESULTS_DIR, 
-                                titlestr=titlestr_nocls, 
-                                dpi=dpi,
-                                show=show, 
-                                save=save)
+                plot_cumul_gain(y_test=y_test,
+                                    y_pred=y_pred_proba, 
+                                    RESULTS_DIR=RESULTS_DIR, 
+                                    titlestr=titlestr_cls,
+                                    classes_titlestr = classes_titlestr,
+                                    dpi=dpi,
+                                    show=show, 
+                                    save=save)
+            else:
+                print("Skipping KS, Lift and Cumulative Gain plots as number of classes is not 2")
             
-            plot_cv_pr_curve(classifier=untrained_model,  
-                                X=X, 
-                                y=pd.Series(y), 
-                                n_splits=n_splits,
-                                RESULTS_DIR=RESULTS_DIR, 
-                                titlestr=titlestr_nocls,
-                                dpi=dpi,
-                                show=show, 
-                                save=save)
-        else:
-            print("Skipping Cross Validated ROC and PR curves as number of classes is not 2")
+            plot_classwise_pr_curve(y_test=y_test,
+                                        y_pred=y_pred_proba, 
+                                        RESULTS_DIR=RESULTS_DIR, 
+                                        titlestr=titlestr_cls,
+                                        classes_titlestr = classes_titlestr,
+                                        dpi=dpi,
+                                        show=show, 
+                                        save=save)
+            
+            plot_classwise_roc_curve(y_test=y_test,
+                                        y_pred=y_pred_proba, 
+                                        RESULTS_DIR=RESULTS_DIR, 
+                                        titlestr=titlestr_cls,
+                                        classes_titlestr = classes_titlestr,
+                                        dpi=dpi,
+                                        show=show, 
+                                        save=save)
+
+        if untrained_model is not None and X is not None and y is not None:
+            assert len(X) == len(y), "[Length Mismatch]: Number of samples not equal to number of class labels"    
+            if len(list(set(y_test))) == 2:
+                
+                plot_cv_roc_curve(classifier=untrained_model, 
+                                            X=X, 
+                                            y=y, 
+                                            n_splits=n_splits,
+                                            RESULTS_DIR=RESULTS_DIR, 
+                                            titlestr=titlestr_nocls, 
+                                            dpi=dpi,
+                                            show=show, 
+                                            save=save)
+                
+                plot_cv_pr_curve(classifier=untrained_model,  
+                                    X=X, 
+                                    y=y, 
+                                    n_splits=n_splits,
+                                    RESULTS_DIR=RESULTS_DIR, 
+                                    titlestr=titlestr_nocls,
+                                    dpi=dpi,
+                                    show=show, 
+                                    save=save)
+            else:
+                print("Skipping Cross Validated ROC and PR curves as number of classes is not 2")
     
     if make_shap_plot:
         if X_train is not None and X_test is not None and trained_model is not None:
             plot_shap_summary(model=trained_model, X_train=X_train, X_test=X_test,
+                                nsamples=shap_nsamples, feature_names=feature_names,
                                 titlestr=titlestr_nocls, show=show, RESULTS_DIR=RESULTS_DIR, save=save)
         else:
             print("Hey! You asked me to make a shap plot but did not provide a trained model, X_train and X_test !!!")
+    
+    if make_calibration_curves:
+        if len(list(set(y_test))) == 2:
+            if untrained_models_list is not None and \
+                untrained_models_names is not None and \
+                    X_train is not None and y_train is not None and \
+                        X_test is not None and y_train is not None:
+                assert len(untrained_models_list) == len(untrained_models_names), "[Length Mismatch]: Number of models not equal to number of model names"
+                assert len(X_train) == len(y_train), "[Length Mismatch]: Number of samples not equal to number of class labels"
+                assert len(X_test) == len(y_test), "[Length Mismatch]: Number of samples not equal to number of class labels"
+
+                plot_calibration_curve(classifiers_list=untrained_models_list,
+                                        classifiers_names=untrained_models_names,
+                                        X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test,
+                                        titlestr=titlestr_nocls, RESULTS_DIR=RESULTS_DIR, show=show, save=save, dpi=dpi)
+            else:
+                print("Skipping Calibration Curves as number of classes is not >=2 ")
+
             
