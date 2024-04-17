@@ -17,7 +17,6 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 from sklearn.datasets import make_classification, load_iris, load_digits
-from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import LabelEncoder
 
 ## Classification models
@@ -31,6 +30,9 @@ from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
 
 from sklearn.metrics import confusion_matrix, classification_report, roc_curve, precision_recall_curve
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, dcg_score, ndcg_score, cohen_kappa_score
+
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from skopt import BayesSearchCV
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -48,7 +50,8 @@ def plot_grid_search_metrics(hparam_search_results, metric="F1", show=False, sav
 
     dimslist4parcoordplot = []
     for hparam_name in hparams:
-        if hparam_search_results[hparam_name].dtype in ["object", "categorical"]: 
+        # print(hparam_name, hparam_search_results[hparam_name].dtype)
+        if hparam_search_results[hparam_name].dtype in ["object", "categorical", "bool"]: 
             le = LabelEncoder()
             encoded_hparam = le.fit_transform(hparam_search_results[hparam_name])
             dimslist4parcoordplot.append(
@@ -69,7 +72,8 @@ def plot_grid_search_metrics(hparam_search_results, metric="F1", show=False, sav
         dimslist4parcoordplot.append(
             dict(
                     label=metric_name.split("mean_test_")[-1], 
-                    values=hparam_search_results[metric_name].values
+                    values=hparam_search_results[metric_name].values,
+                    range=[0,1]
                 )
         )
 
@@ -82,7 +86,7 @@ def plot_grid_search_metrics(hparam_search_results, metric="F1", show=False, sav
             dimensions = dimslist4parcoordplot
         )
     )
-    # fig.update_layout(width=1500, height=500)
+    fig.update_layout(width=1500, height=500)
     if save:
         fig.write_html(save_dir+"/parcoord_plot.html")
         fig.write_image(save_dir+"/parcoord_plot.png")
@@ -92,9 +96,10 @@ def plot_grid_search_metrics(hparam_search_results, metric="F1", show=False, sav
 def classify_feats(X=None, gt_labels=[],
                     classification_algorithms=["LogisticRegression",
                                                 "GaussianNB", "KNeighborsClassifier",
-                                                "DecisionTreeClassifier", "ExtraTreeClassifier", 
                                                 "RandomForestClassifier", "ExtraTreesClassifier",
+                                                "DecisionTreeClassifier", "ExtraTreeClassifier", 
                                             ], 
+                    search_space = [], # TODO: If provided, will override the classification_algorithms
                     num_runs=5, best_model_metric="F1",
                     show=False, save=False, save_dir=None
                 ):
@@ -108,11 +113,11 @@ def classify_feats(X=None, gt_labels=[],
         y_pred_proba = estimator.predict_proba(X)
         if num_classes == 2:
             return {
-                    "Accuracy": accuracy_score(y_true, y_pred > 0.5),
-                    "Precision": precision_score(y_true, y_pred > 0.5),
-                    "Recall": recall_score(y_true, y_pred > 0.5),
-                    "F1": f1_score(y_true, y_pred > 0.5),
-                    "AUROC": roc_auc_score(y_true, y_pred),
+                    "Accuracy": accuracy_score(y_true, y_pred),
+                    "Precision": precision_score(y_true, y_pred, average='binary'),
+                    "Recall": recall_score(y_true, y_pred, average='binary'),
+                    "F1": f1_score(y_true, y_pred, average='binary'),
+                    "AUROC": roc_auc_score(y_true, y_pred_proba[:,1]),
                     # "Discounted_Cumulative_Gain": dcg_score(y_true, y_pred),
                     # "Normalized_Discounted_Cumulative_Gain": ndcg_score(y_true, y_pred),
                     # "Cohen_Kappa": cohen_kappa_score(y_true, y_pred)
@@ -153,7 +158,7 @@ def classify_feats(X=None, gt_labels=[],
 
                                                     }])
     if "GaussianNB" in classification_algorithms:
-        search_space.append([GaussianNB(), {}])
+        search_space.append([GaussianNB(), {"var_smoothing": [1e-9, 1e-5, 1e-3]}])
 
     if "KNeighborsClassifier" in classification_algorithms:
         search_space.append([KNeighborsClassifier(), {
@@ -164,13 +169,13 @@ def classify_feats(X=None, gt_labels=[],
                                                     }])
     if "RandomForestClassifier" in classification_algorithms:
         search_space.append([RandomForestClassifier(), {
-                                                        "n_estimators": [10, 50, 100, 200],
+                                                        "n_estimators": [10, 50, 100, 200, 500],
                                                         "criterion": ['gini', 'entropy', 'log_loss'],
                                                         "bootstrap": [True, False]
                                                     }])
     if "ExtraTreesClassifier" in classification_algorithms:
         search_space.append([ExtraTreesClassifier(), {
-                                                        "n_estimators": [10, 50, 100, 200],
+                                                        "n_estimators": [10, 50, 100, 200, 500],
                                                         "criterion": ['gini', 'entropy', 'log_loss'],
                                                         "bootstrap": [True, False]
                                                     }])
@@ -203,13 +208,24 @@ def classify_feats(X=None, gt_labels=[],
         else:
             save_dir_ = None
 
-        classifier_hpopt = GridSearchCV(estimator=estimator,
-                                        param_grid=param_grid,
-                                        scoring=scorer,
-                                        refit=best_model_metric,
-                                        cv=num_runs, n_jobs=-1,
-                                        verbose=0,
-                                    )
+        # print(f"Using GridSearchCV for {estimator_name}...")
+        # classifier_hpopt = GridSearchCV(estimator=estimator,
+        #                                 param_grid=param_grid,
+        #                                 scoring=scorer,
+        #                                 refit=best_model_metric,
+        #                                 cv=num_runs, n_jobs=-1,
+        #                                 verbose=0,
+        #                             )
+        
+        print(f"Using RandomizedSearchCV for {estimator_name}...")
+        classifier_hpopt = RandomizedSearchCV(estimator=estimator,
+                                            param_distributions=param_grid,
+                                            scoring=scorer,
+                                            refit=best_model_metric,
+                                            cv=num_runs, n_jobs=-1,
+                                            verbose=0,
+                                        )
+        
         classifier_hpopt.fit(X, gt_labels)
 
         best_model = classifier_hpopt.best_estimator_

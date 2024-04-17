@@ -432,8 +432,9 @@ def plot_cv_pr_curve(classifier=None, cv=None, n_splits=10, X=None, y=None, RESU
 def plot_shap_summary(model=None, nsamples=50, X_train=None, X_test=None, feature_names=None, titlestr='', show=False, save=False, RESULTS_DIR=None, dpi=300):
     print("No. of samples used to build explainer and generate shap values: ", nsamples)
     explainer = shap.KernelExplainer(model.predict, shap.sample(X_train, nsamples))
-    shap_values = explainer.shap_values(X=X_test, nsamples=nsamples)
-    shap.summary_plot(shap_values=shap_values, features=X_test, feature_names=feature_names, show=False)
+    X_test_sample = shap.sample(X_test, nsamples)
+    shap_values = explainer.shap_values(X=X_test_sample)
+    shap.summary_plot(shap_values=shap_values, features=X_test_sample, feature_names=feature_names, show=False)
     # shap.plots.violin(shap_values=shap_values, features=X_test, plot_type="layered_violin", show=False)
     plt.title(titlestr+'Shapley Analysis')
     plt.tight_layout()
@@ -499,8 +500,7 @@ def eval_classification(make_metrics_plots=True, y_pred=None, y_pred_proba=None,
 
     if save:
         if RESULTS_DIR is not None:
-            if not os.path.exists(RESULTS_DIR):
-                os.makedirs(RESULTS_DIR)
+            os.makedirs(RESULTS_DIR, exist_ok=True)
             print("Saving results in {}".format(RESULTS_DIR))   
         else:
             print("Hey! You asked me to save results but did not provide a RESULTS_DIR !!!")
