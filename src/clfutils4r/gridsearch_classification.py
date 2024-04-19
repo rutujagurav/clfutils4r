@@ -32,7 +32,11 @@ from sklearn.metrics import confusion_matrix, classification_report, roc_curve, 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, dcg_score, ndcg_score, cohen_kappa_score
 
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
-from skopt import BayesSearchCV
+# from skopt import BayesSearchCV
+# from skopt.space import Real, Categorical, Integer
+# from skopt.plots import plot_objective, plot_histogram
+# from sklearn.utils._testing import ignore_warnings
+# from sklearn.exceptions import FitFailedWarning, ConvergenceWarning
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -45,6 +49,20 @@ from tqdm.autonotebook import tqdm
 
 
 def plot_grid_search_metrics(hparam_search_results, metric="F1", show=False, save=False, save_dir=None):
+    """
+    Plots grid search results as a Parallel Coordinates Plot.
+ 
+    Args:
+        hparam_search_results (pandas DataFrame): This holds the results of cv_results_ from a completed run of GridSearchCV, RandomSearchCV, etc.
+        metric (str): The metric to use for the colorbar in the parallel coordinates plot.
+        show (bool): Whether to display the plot. Useful in notebooks.
+        save (bool): Whether to save the plot as an image and html file.
+        save_dir (str): If save is True, then this is the directory where the plot will be saved.
+ 
+    Returns:
+        None
+    """
+    
     hparams = [col for col in hparam_search_results.columns if col.startswith("param_")]
     metrics = [col for col in hparam_search_results.columns if col.startswith("mean_test_")]
 
@@ -52,6 +70,9 @@ def plot_grid_search_metrics(hparam_search_results, metric="F1", show=False, sav
     for hparam_name in hparams:
         # print(hparam_name, hparam_search_results[hparam_name].dtype)
         if hparam_search_results[hparam_name].dtype in ["object", "categorical", "bool"]: 
+            ## Convert None to 'None'
+            hparam_search_results[hparam_name].replace({None: 'None'}, inplace=True)
+            # print(hparam_search_results[hparam_name])
             le = LabelEncoder()
             encoded_hparam = le.fit_transform(hparam_search_results[hparam_name])
             dimslist4parcoordplot.append(
@@ -80,18 +101,50 @@ def plot_grid_search_metrics(hparam_search_results, metric="F1", show=False, sav
     fig = go.Figure(data=
         go.Parcoords(
             line = dict(color = hparam_search_results[f'mean_test_{metric}'],
-                    colorscale = 'Viridis',
+                    colorscale = 'viridis_r',
                     showscale = True,
+                    cmin=0, cmax=1
                 ),
             dimensions = dimslist4parcoordplot
         )
     )
-    fig.update_layout(width=1500, height=500)
+    
     if save:
+        os.makedirs(save_dir, exist_ok=True)
+        fig.update_layout(width=800, height=300)
         fig.write_html(save_dir+"/parcoord_plot.html")
-        fig.write_image(save_dir+"/parcoord_plot.png")
+        fig.write_image(save_dir+"/parcoord_plot.png", scale=3)
     if show:
         fig.show()
+
+# def to_skopt_search_space(param_grid):
+#     """
+#     Converts the sklearn compatible param_grid to skopt compatible search_space.
+
+#     Args:
+#         param_grid (dict): Dictionary containing the hyperparameters to search over.
+    
+#     Returns:
+#         skopt_param_grid (dict): Dictionary containing the hyperparameters to search over in skopt format.
+#     """
+#     skopt_param_grid = {}
+#     for key, value in param_grid.items():
+#         # if the value is a list of strings, then it is a categorical parameter
+#         if isinstance(value, list) and all(isinstance(i, str) for i in value):
+#             skopt_param_grid[key] = Categorical(value)
+#         # if the value is a list of booleans, then it is a boolean parameter
+#         elif isinstance(value, list) and all(isinstance(i, bool) for i in value):
+#             skopt_param_grid[key] = value
+#         # if the value is a list of integers, then it is a integer parameter
+#         elif isinstance(value, list) and all(isinstance(i, int) for i in value):
+#             skopt_param_grid[key] = Integer(min(value), max(value))
+#         # if the value is a list of floats, then it is a real parameter
+#         elif isinstance(value, list) and all(isinstance(i, float) for i in value):
+#             skopt_param_grid[key] = Real(min(value), max(value), prior='log-uniform')
+#         else:
+#             raise ValueError(f"Unknown type of parameter: {value}")
+#     return skopt_param_grid
+        
 
 def classify_feats(X=None, gt_labels=[],
                     classification_algorithms=["LogisticRegression",
@@ -99,10 +152,32 @@ def classify_feats(X=None, gt_labels=[],
                                                 "RandomForestClassifier", "ExtraTreesClassifier",
                                                 "DecisionTreeClassifier", "ExtraTreeClassifier", 
                                             ], 
+                    search_method = "RandomizedSearchCV",
                     search_space = [], # TODO: If provided, will override the classification_algorithms
                     num_runs=5, best_model_metric="F1",
                     show=False, save=False, save_dir=None
                 ):
+    """
+    Runs a grid search for hyperparameters of various classification algorithms using specified search_method over specified search_space.
+
+    Args:
+        X (numpy array): Dataset
+        gt_labels (list): Ground truth labels
+        classification_algorithms (list): List of names of classification algorithms to use for grid search. If search_space is provided then this is ignored.
+        search_method (str): GridSearchCV or RandomizedSearchCV
+        search_space (list): List of tuples, each containing an estimator and its hyperparameter grid. If not provided then the default search space is used.
+        num_runs (int): Number of cross-validation runs
+        best_model_metric (str): Metric to use for selecting the best model
+        show (bool): Whether to display the plot. Useful in notebooks.
+        save (bool): Whether to save the outputs.
+        save_dir (str): If save is True, then this is the directory where the outputs will be saved.
+    
+    Returns:
+        best_estimator_overall (sklearn estimator): The best model found during the grid search
+        grid_search_results (dict): A dictionary containing the results of the grid search for each estimator
+    
+    """
+    num_samples = X.shape[0]
     num_classes = len(np.unique(gt_labels))
     print(f"No. of classes: {num_classes}")
     print(f"Class counts: {collections.Counter(gt_labels)}")
@@ -110,14 +185,14 @@ def classify_feats(X=None, gt_labels=[],
     def scorer(estimator, X, y_true):
         estimator.fit(X, y_true)
         y_pred = estimator.predict(X)
-        y_pred_proba = estimator.predict_proba(X)
+        # y_pred_proba = estimator.predict_proba(X)
         if num_classes == 2:
             return {
                     "Accuracy": accuracy_score(y_true, y_pred),
                     "Precision": precision_score(y_true, y_pred, average='binary'),
                     "Recall": recall_score(y_true, y_pred, average='binary'),
                     "F1": f1_score(y_true, y_pred, average='binary'),
-                    "AUROC": roc_auc_score(y_true, y_pred_proba[:,1]),
+                    "AUROC": roc_auc_score(y_true, y_pred), #"AUROC": roc_auc_score(y_true, y_pred_proba[:,1]),
                     # "Discounted_Cumulative_Gain": dcg_score(y_true, y_pred),
                     # "Normalized_Discounted_Cumulative_Gain": ndcg_score(y_true, y_pred),
                     # "Cohen_Kappa": cohen_kappa_score(y_true, y_pred)
@@ -128,65 +203,82 @@ def classify_feats(X=None, gt_labels=[],
                     "Precision": precision_score(y_true, y_pred, average='weighted'),
                     "Recall": recall_score(y_true, y_pred, average='weighted'),
                     "F1": f1_score(y_true, y_pred, average='weighted'),
-                    "AUROC": roc_auc_score(y_true, y_pred_proba, multi_class='ovr'),
+                    "AUROC": roc_auc_score(y_true, y_pred, multi_class='ovr'), #"AUROC": roc_auc_score(y_true, y_pred_proba, multi_class='ovr'),
                     # "Discounted_Cumulative_Gain": dcg_score(y_true, y_pred),
                     # "Normalized_Discounted_Cumulative_Gain": ndcg_score(y_true, y_pred),
                     # "Cohen_Kappa": cohen_kappa_score(y_true, y_pred)
                 }
     
-    search_space = []
-    if "LogisticRegression" in classification_algorithms:
-        search_space.append([LogisticRegression(), {
-                                                        "penalty": ['l2', 'elasticnet'],
+    if len(search_space) == 0:
+        search_space = []
+        if "LogisticRegression" in classification_algorithms:
+            search_space.append([LogisticRegression(), {
+                                                            "penalty": ['l1', 'l2', 'elasticnet'], 
+                                                            "fit_intercept": [True, False],
+                                                            "C": [1,2,4]
+                                                    }])
+        if "RidgeClassifier" in classification_algorithms:
+            search_space.append([RidgeClassifier(), {
+                                                        "alpha": [1,2,4],
                                                         "fit_intercept": [True, False],
-                                                        "C": [1,2,4]
-                                                }])
-    if "RidgeClassifier" in classification_algorithms:
-        search_space.append([RidgeClassifier(), {
-                                                    "alpha": [1,2,4],
-                                                    "fit_intercept": [True, False],
-                                                }])
-    if "DecisionTreeClassifier" in classification_algorithms:
-        search_space.append([DecisionTreeClassifier(), {
+                                                    }])
+        if "DecisionTreeClassifier" in classification_algorithms:
+            min_samples_split = np.round(np.linspace(2/num_samples, 0.01, 10), 5)
+            # print(f"min_samples_split: {min_samples_split}")
+            search_space.append([DecisionTreeClassifier(), {
+                                                                "criterion": ['gini', 'entropy', 'log_loss'],
+                                                                "splitter": ['best', 'random'],
+                                                                "min_samples_split": min_samples_split, #[0.01, 0.05, 0.1],
+                                                                "class_weight": ['balanced', None],
+                                                                # "monotonic_cst": [None, [1,0], [0,1], [1,1], [-1,0], [0,-1], [-1,-1], [1,-1], [-1,1]]
+                                                            }])
+        if "ExtraTreeClassifier" in classification_algorithms:
+            min_samples_split = np.round(np.linspace(2/num_samples, 0.01, 10), 5)
+            # print(f"min_samples_split: {min_samples_split}")
+            search_space.append([ExtraTreeClassifier(), {
                                                             "criterion": ['gini', 'entropy', 'log_loss'],
-                                                            "splitter": ['best', 'random']
+                                                            "splitter": ['best', 'random'],
+                                                            "min_samples_split": min_samples_split, #[0.01, 0.05, 0.1],
+                                                            "class_weight": ['balanced', None],
                                                         }])
-    if "ExtraTreeClassifier" in classification_algorithms:
-        search_space.append([ExtraTreeClassifier(), {
-                                                        "criterion": ['gini', 'entropy', 'log_loss'],
-                                                        "splitter": ['best', 'random']
+        if "GaussianNB" in classification_algorithms:
+            search_space.append([GaussianNB(), {"var_smoothing": [1e-9, 1e-5, 1e-3]}])
 
-                                                    }])
-    if "GaussianNB" in classification_algorithms:
-        search_space.append([GaussianNB(), {"var_smoothing": [1e-9, 1e-5, 1e-3]}])
-
-    if "KNeighborsClassifier" in classification_algorithms:
-        search_space.append([KNeighborsClassifier(), {
-                                                        "n_neighbors": [1, 5, 10],
-                                                        "weights": ['uniform', 'distance'],
-                                                        "algorithm": ['auto', 'ball_tree', 'kd_tree', 'brute'],
-                                                        "p": [1,2]
-                                                    }])
-    if "RandomForestClassifier" in classification_algorithms:
-        search_space.append([RandomForestClassifier(), {
-                                                        "n_estimators": [10, 50, 100, 200, 500],
-                                                        "criterion": ['gini', 'entropy', 'log_loss'],
-                                                        "bootstrap": [True, False]
-                                                    }])
-    if "ExtraTreesClassifier" in classification_algorithms:
-        search_space.append([ExtraTreesClassifier(), {
-                                                        "n_estimators": [10, 50, 100, 200, 500],
-                                                        "criterion": ['gini', 'entropy', 'log_loss'],
-                                                        "bootstrap": [True, False]
-                                                    }])
-    if "GaussianProcessClassifier" in classification_algorithms:
-        search_space.append([GaussianProcessClassifier(), {}])
-    if "LinearSVC" in classification_algorithms:
-        search_space.append([LinearSVC(), {
-                                            "penalty": ['l1', 'l2', 'elasticnet'],
-                                            "C": [1,2,4],
-                                            "fit_intercept": [True, False]
-                                        }])    
+        if "KNeighborsClassifier" in classification_algorithms:
+            search_space.append([KNeighborsClassifier(), {
+                                                            "n_neighbors": [1, 5, 10],
+                                                            "weights": ['uniform', 'distance'],
+                                                            "algorithm": ['auto', 'ball_tree', 'kd_tree', 'brute'],
+                                                            "p": [1,2]
+                                                        }])
+        if "RandomForestClassifier" in classification_algorithms:
+            min_samples_split = np.round(np.linspace(2/num_samples, 0.01, 10), 5)
+            # print(f"min_samples_split: {min_samples_split}")
+            search_space.append([RandomForestClassifier(), {
+                                                            "n_estimators": [10, 50, 100, 200, 500],
+                                                            "criterion": ['gini', 'entropy', 'log_loss'],
+                                                            "bootstrap": [True, False],
+                                                            "min_samples_split": min_samples_split, #[0.01, 0.05, 0.1],
+                                                            "max_features": ['sqrt', 'log2', None],
+                                                        }])
+        if "ExtraTreesClassifier" in classification_algorithms:
+            min_samples_split = np.round(np.linspace(2/num_samples, 0.01, 10), 5)            
+            # print(f"min_samples_split: {min_samples_split}")
+            search_space.append([ExtraTreesClassifier(), {
+                                                            "n_estimators": [10, 50, 100, 200, 500],
+                                                            "criterion": ['gini', 'entropy', 'log_loss'],
+                                                            "bootstrap": [True, False],
+                                                            "min_samples_split": min_samples_split, #[0.01, 0.05, 0.1],
+                                                        }])
+        if "GaussianProcessClassifier" in classification_algorithms:
+            search_space.append([GaussianProcessClassifier(), {}])
+        if "LinearSVC" in classification_algorithms:
+            search_space.append([LinearSVC(), {
+                                                "penalty": ['l1', 'l2'],
+                                                "loss": ['hinge', 'squared_hinge'],
+                                                "C": [1,2,4],
+                                                "fit_intercept": [True, False]
+                                            }])    
     
     print("Search space:")
     pprint(search_space)
@@ -208,24 +300,43 @@ def classify_feats(X=None, gt_labels=[],
         else:
             save_dir_ = None
 
-        # print(f"Using GridSearchCV for {estimator_name}...")
-        # classifier_hpopt = GridSearchCV(estimator=estimator,
-        #                                 param_grid=param_grid,
-        #                                 scoring=scorer,
-        #                                 refit=best_model_metric,
-        #                                 cv=num_runs, n_jobs=-1,
-        #                                 verbose=0,
-        #                             )
         
-        print(f"Using RandomizedSearchCV for {estimator_name}...")
-        classifier_hpopt = RandomizedSearchCV(estimator=estimator,
-                                            param_distributions=param_grid,
+        if search_method == "GridSearchCV":
+            print(f"Using GridSearchCV for {estimator_name}...")
+            classifier_hpopt = GridSearchCV(estimator=estimator,
+                                            param_grid=param_grid,
                                             scoring=scorer,
                                             refit=best_model_metric,
                                             cv=num_runs, n_jobs=-1,
-                                            verbose=0,
+                                            error_score=np.nan, ## Skip forbidden parameter settings
+                                            verbose=10,
                                         )
-        
+        elif search_method == "RandomizedSearchCV":
+            print(f"Using RandomizedSearchCV for {estimator_name}...")
+            classifier_hpopt = RandomizedSearchCV(estimator=estimator,
+                                                param_distributions=param_grid,
+                                                scoring=scorer,
+                                                n_iter=50,
+                                                refit=best_model_metric,
+                                                cv=num_runs, n_jobs=-1,
+                                                error_score=np.nan, ## Skip forbidden parameter settings
+                                                verbose=0,
+                                            )
+        # elif search_method == "BayesSearchCV":
+        #     print(f"Using BayesSearchCV for {estimator_name}...")
+        #     param_grid = to_skopt_search_space(param_grid)
+        #     classifier_hpopt = BayesSearchCV(estimator=estimator,
+        #                                     search_spaces=param_grid,
+        #                                     scoring=scorer,
+        #                                     n_iter=10,
+        #                                     refit=best_model_metric,
+        #                                     cv=num_runs, n_jobs=-1,
+        #                                     error_score=np.nan, ## Skip forbidden parameter settings: Not working for BayesSearchCV
+        #                                     verbose=1,
+        #                                 )
+        else:
+            raise ValueError(f"Unknown search method: {search_method}")
+            
         classifier_hpopt.fit(X, gt_labels)
 
         best_model = classifier_hpopt.best_estimator_
@@ -235,7 +346,7 @@ def classify_feats(X=None, gt_labels=[],
             best_score_overall = classifier_hpopt.best_score_
             best_estimator_overall = best_model
         
-        grid_search_results_df = pd.DataFrame(classifier_hpopt.cv_results_).fillna(0)
+        grid_search_results_df = pd.DataFrame(classifier_hpopt.cv_results_) #.fillna(0)
         grid_search_results[estimator_name] = grid_search_results_df
         # print(grid_search_results_df.columns)
         
@@ -243,6 +354,18 @@ def classify_feats(X=None, gt_labels=[],
         plot_grid_search_metrics(grid_search_results_df, 
                                  metric=best_model_metric,
                                  show=show, save=save, save_dir=save_dir_)
+        # if search_method == "BayesSearchCV":
+        #     # print(list(param_grid.keys()), classifier_hpopt.optimizer_results_[0])
+        #     print(classifier_hpopt.optimizer_results_)
+        #     fig, ax = plt.subplots(figsize=(10,10))
+        #     plot = plot_objective(classifier_hpopt.optimizer_results_[0],
+        #                             # dimensions=list(param_grid.keys()),
+        #                             ax=ax
+        #                         )
+        #     plt.tight_layout()
+        #     if save: plt.savefig(os.path.join(save_dir_, 'bayes_search_plot.png'))
+        #     if show: plt.show()
+        #     plt.close()
         
         if save:
             ## Save cv_results_ to a json file
@@ -266,18 +389,18 @@ def classify_feats(X=None, gt_labels=[],
         ## Save the best overall model using joblib
         joblib.dump(best_estimator_overall, os.path.join(save_dir, f'best_model.joblib'))
 
-    return best_estimator_overall, grid_search_results
+    return best_estimator_overall, best_score_overall, grid_search_results
 
 gridsearch_classification = classify_feats
 
 if __name__ == "__main__":
-    ## For testing purposes
+    '''Test the classify_feats function'''
 
     rng = np.random.RandomState(0)
     n_samples=1000
 
     ### Synthetic data
-    X, y = make_classification(n_samples=n_samples, n_classes=5)
+    X, y = make_classification(n_samples=n_samples, n_features=20, n_redundant=3, n_repeated=1, n_informative=10, n_classes=2, random_state=42)
 
     ### Real benchmark
     # data = load_iris()

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: clfutils4r
-Version: 1.0.0
+Version: 1.0.2
 Summary: Wrapper around some basic sklearn and scikit-plot utilities for classification.
 Home-page: https://github.com/rutujagurav/clfutils4r
 Author: Rutuja Gurav
@@ -141,7 +141,7 @@ from eval_classification import eval_classification
 ## Make metrics plots
 eval_classification(make_metrics_plots=True, y_test=y_test, y_pred=y_pred, y_pred_proba=y_pred_proba,  
                     class_names=class_names, feature_names=feature_names,
-                    titlestr="Breast Cancer Detection",
+                    titlestr="Breast Cancer Classification",
                     show=True, save=True, 
                     RESULTS_DIR=os.getcwd()+'/test_results')
 
@@ -180,3 +180,8 @@ eval_classification(make_metrics_plots=True, y_test=y_test, y_pred=y_pred, y_pre
 
 ## Developer Notes:
 This package is the updated version of `bcutils4r` which supported only binary classification. `bcutils4r` is now defunct.
+
+## Credits:
+1. For pretty confusion matrix - https://github.com/phongsathorn1/pretty-confusion-matrix
+2. Scikit Plot package  - https://scikit-plot.readthedocs.io/en/stable
+3. Shapley Analysis - https://shap-lrjball.readthedocs.io/en/latest/
