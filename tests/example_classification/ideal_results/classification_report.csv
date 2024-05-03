@@ -1,6 +1,0 @@
-,precision,recall,f1-score,support
-malignant(class 0),1.0,1.0,1.0,43.0
-benign(class 1),1.0,1.0,1.0,71.0
-accuracy,1.0,1.0,1.0,1.0
-macro avg,1.0,1.0,1.0,114.0
-weighted avg,1.0,1.0,1.0,114.0
