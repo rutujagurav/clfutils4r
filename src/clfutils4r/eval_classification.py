@@ -26,7 +26,7 @@ from sklearn.manifold import TSNE
 
 import scikitplot
 print(f"scikitplot version: {scikitplot.__version__}")
-import pretty_cm # type: ignore
+from . import pretty_cm
 
 import shap
 
